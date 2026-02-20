@@ -52,5 +52,6 @@ coverage.xml
 # Sphinx documentation
 docs/_build/
 
-# Others..
+# Others...
 tests.py
+legacy.py
