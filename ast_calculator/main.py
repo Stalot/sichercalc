@@ -6,9 +6,8 @@ class SafeEvaluator:
     @classmethod
     def evaluate(cls,
                  expression,
-                 context: None | dict[str, Any] = None,
                  **kwargs):
-        _opLogic = OpLogic(mode=kwargs.get("mode", "float"))
+        _opLogic = OpLogic(mode=kwargs.get("mode", "none"))
         func_map: dict[str, Callable] = {}
         const_map: dict[str, int | float] = {}
         
@@ -53,11 +52,10 @@ class SafeEvaluator:
                 right = node_evaluation(node.right)
 
                 try:
-                    #return cls.op_map[type(op)](left, right)
                     return _opLogic.call(type(op), left, right)
                 except KeyError:
                     raise ValueError(
-                        "Operator %s not supported" % op.__class__.__name__)
+                        f"Operator {op.__class__.__name__} not supported")
 
             elif isinstance(node, ast.Call):
                 try:
@@ -69,7 +67,7 @@ class SafeEvaluator:
                 try:
                     return func_map[func_name](*args)
                 except KeyError:
-                    raise ValueError("Function %s not supported" % func_name)
+                    raise ValueError(f"Function '{func_name}' not supported")
 
             elif isinstance(node, ast.Constant):
                 return node.value
@@ -78,24 +76,12 @@ class SafeEvaluator:
                 try:
                     return const_map[node.id]
                 except KeyError:
-                    raise ValueError("Constant %s not supported" % node.id)
+                    raise ValueError(f"Constant '{node.id}' not supported")
 
-            raise TypeError("Unsupported operation: %s" % node.__class__.__name__)
-        context_map(context)
+            raise TypeError(f"Unsupported operation: {node.__class__.__name__}")
+        context_map(kwargs.get("context"))
              
         return node_evaluation(expression)
 
 if __name__ == "__main__":
-    se = SafeEvaluator()
-    constants = {"aaa": "2653.0000000000000000000000000000000"}
-    def zero():
-        return 0
-    functions = {"zero": zero}
-    context = {
-        "const": constants,
-        "func": functions
-    }
-    def my_func():
-        ...
-    result = se.evaluate("2+2/1", context)
-    print(result)
+    ...
