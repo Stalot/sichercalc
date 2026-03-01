@@ -30,8 +30,6 @@ class OpLogic():
         def convert(number: int | float) -> int | float | Decimal:
             new_number = number
             match self.mode:
-                case "none":
-                    ...
                 case "float":
                     new_number = float(number)
                 case "decimal": 

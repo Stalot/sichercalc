@@ -59,7 +59,11 @@ class NodeInterpreter:
     
     func_map: dict[str, Callable] = {}
     const_map: dict[str, int | float] = {}
-        
+    
+    def set_op_logic(self, logic: OpLogic):
+    	if not isinstance(logic, OpLogic):
+    		raise TypeError(f"logic must be an OpLogic object, not {type(logic).__name__}!")
+    	self._opLogic = logic
     def context_map(self, context) -> None:
         if not context:
             return None
@@ -80,11 +84,9 @@ class NodeInterpreter:
     
     def eval_node(self, node: Any):
         _type: Any = type(node)
-        #self.instance_map[_type](self, node)
         if ast_instance := self.instance_map.get(_type):
             return ast_instance(self, node)
         raise KeyError(_type)
-        #return self.instance_map[_type](self, node)
 
 if __name__ == "__main__":
     inter: NodeInterpreter = NodeInterpreter()
