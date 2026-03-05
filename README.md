@@ -20,7 +20,7 @@ eliminating the security risks associated with `eval()`.
 
 - No `eval()` – pure AST parsing and controlled evaluation  
 - Extensible – register your own custom functions  
-- Works on Python 3.8+
+- Works on Python 3.10+
 
 ## Getting Started
 
