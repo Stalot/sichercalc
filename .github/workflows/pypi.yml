@@ -38,7 +38,7 @@ jobs:
 
     environment:
       name: pypi
-      url: https://pypi.org/p/sichercalc
+      url: https://pypi.org/project/sichercalc/
 
     steps:
       - name: Retrieve release distributions
