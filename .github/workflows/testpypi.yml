@@ -39,7 +39,7 @@ jobs:
 
     environment:
       name: testpypi
-      url: https://test.pypi.org/p/sichercalc
+      url: https://test.pypi.org/project/sichercalc/
 
     permissions:
       id-token: write  # IMPORTANT: mandatory for trusted publishing
