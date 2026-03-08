@@ -53,5 +53,4 @@ coverage.xml
 docs/_build/
 
 # Others...
-tests.py
-legacy.py
+tests/

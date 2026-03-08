@@ -1,6 +1,7 @@
 import ast
 from typing import Any, Literal, Callable
 from .op_logic import OpLogic
+from .exceptions import ForbiddenNode
 
 class NodeInterpreter:
     _opLogic: OpLogic = OpLogic()
@@ -54,7 +55,7 @@ class NodeInterpreter:
         ast.Expr: _expr,
         ast.Module: _module,
         ast.Call: _call,
-        ast.Name: _name
+        ast.Name: _name,
     }
     
     func_map: dict[str, Callable] = {}
@@ -86,7 +87,7 @@ class NodeInterpreter:
         _type: Any = type(node)
         if ast_instance := self.instance_map.get(_type):
             return ast_instance(self, node)
-        raise KeyError(_type)
+        raise ForbiddenNode(f"{_type} is not supported")
 
 if __name__ == "__main__":
     inter: NodeInterpreter = NodeInterpreter()
