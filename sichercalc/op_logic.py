@@ -1,6 +1,8 @@
 import ast
 import operator 
 from decimal import Decimal, InvalidOperation
+from typing import Callable
+from .exceptions import ForbiddenNode
 
 # Operators logic
 class OpLogic():
@@ -8,6 +10,7 @@ class OpLogic():
         if not isinstance(precision_mode, str):
           raise TypeError(f"precision_mode must be a str, not {type(precision_mode).__name__}")
         self.mode: str = precision_mode
+
     op_map = {
         ast.Add: operator.add,
         ast.Sub: operator.sub,
@@ -16,11 +19,7 @@ class OpLogic():
         ast.FloorDiv: operator.floordiv,
         ast.Mod: operator.mod,
         ast.Pow: operator.pow,
-        ast.LShift: operator.lshift,
-        ast.RShift: operator.rshift,
-        ast.BitOr: operator.or_,
-        ast.BitAnd: operator.and_,
-        ast.BitXor: operator.xor,
+        ast.BitXor: operator.pow,
     }
 
     def call(self,
@@ -45,9 +44,7 @@ class OpLogic():
             r: int | float | Decimal = convert(right)
             return self.op_map[node_op](l, r)
         except KeyError:
-            raise ValueError(f"{node_op} operator not supported.")
+            raise ForbiddenNode(f"{node_op} operator not supported.")
 
 if __name__ == "__main__":
-    opLogic = OpLogic("0")
-    result = opLogic.call(ast.Mult, 2.722772727, 3.1483828293388383)
-    print(result)
+    ...
