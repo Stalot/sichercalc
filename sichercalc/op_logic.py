@@ -4,10 +4,10 @@ from decimal import Decimal, InvalidOperation
 
 # Operators logic
 class OpLogic():
-    def __init__(self, mode="float"):
-        if not isinstance(mode, str):
-          raise TypeError(f"mode must be a str, not {type(mode).__name__}")
-        self.mode = mode
+    def __init__(self, precision_mode="float"):
+        if not isinstance(precision_mode, str):
+          raise TypeError(f"precision_mode must be a str, not {type(precision_mode).__name__}")
+        self.mode: str = precision_mode
     op_map = {
         ast.Add: operator.add,
         ast.Sub: operator.sub,
@@ -38,7 +38,7 @@ class OpLogic():
                     except InvalidOperation:
                         raise ValueError(f"Couldn't convert {type(number).__name__} '{number}' to a Decimal object")
                 case _:
-                    raise ValueError(f"'{self.mode}' mode is unknown. Valid modes are: none, float and decimal")
+                    raise ValueError(f"'{self.mode}' precision mode is unknown. Valid modes are: float and decimal")
             return new_number
         try:
             l: int | float | Decimal = convert(left)

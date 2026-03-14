@@ -1,5 +1,5 @@
 import ast
-from typing import Any, Literal, Callable
+from typing import Any, Callable
 from .op_logic import OpLogic
 from .exceptions import ForbiddenNode, NodeError
 
@@ -35,7 +35,7 @@ class NodeInterpreter:
         try:
             func_name = node.func.id
         except AttributeError:
-            raise NodeError(f"{node.func.value}: Can't call {type(node.func.value).__name__} object as a function")
+            raise NodeError(f"Can't call {type(node.func.value).__name__} object ({node.func.value}) as a function")
    
         try:
             args = [self.eval_node(arg) for arg in node.args]
@@ -65,11 +65,12 @@ class NodeInterpreter:
     	if not isinstance(logic, OpLogic):
     		raise TypeError(f"logic must be an OpLogic object, not {type(logic).__name__}!")
     	self._opLogic = logic
+
     def context_map(self, context) -> None:
         if not context:
             return None
-        constants: None | dict[str, Literal] = context.get("const")
-        functions: None | dict[str, Callable] = context.get("func")
+        constants: None | dict[str, Any] = context.get("constants")
+        functions: None | dict[str, Callable] = context.get("functions")
         if constants:
             for id, value in constants.items():
                 try:
