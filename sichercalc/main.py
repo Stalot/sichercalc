@@ -1,9 +1,8 @@
-import ast
 from typing import Any
 from .op_logic import OpLogic
 from .node_interpreter import NodeInterpreter
 
-class SafeEvaluator:
+class AstEvaluator:
     @staticmethod
     def evaluate(expression,
                  precision_mode: str = "float",

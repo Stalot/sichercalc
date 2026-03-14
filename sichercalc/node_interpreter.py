@@ -1,7 +1,7 @@
 import ast
 from typing import Any, Literal, Callable
 from .op_logic import OpLogic
-from .exceptions import ForbiddenNode
+from .exceptions import ForbiddenNode, NodeError
 
 class NodeInterpreter:
     _opLogic: OpLogic = OpLogic()
@@ -13,7 +13,7 @@ class NodeInterpreter:
         try:
             return self._opLogic.call(type(op), left, right)
         except KeyError:
-            raise ValueError(f"Operator {op.__class__.__name__} not supported")
+            raise NodeError(f"Operator {op.__class__.__name__} not supported")
 
     def _string(self, node: str):
         return self.eval_node(ast.parse(node))
@@ -35,18 +35,18 @@ class NodeInterpreter:
         try:
             func_name = node.func.id
         except AttributeError:
-            raise ValueError(f"{node.func.value}: Can't call {type(node.func.value).__name__} object as a function")
+            raise NodeError(f"{node.func.value}: Can't call {type(node.func.value).__name__} object as a function")
    
         try:
             args = [self.eval_node(arg) for arg in node.args]
             return self.func_map[func_name](*args)
         except KeyError:
-            raise ValueError(f"Function '{func_name}' not supported")
+            raise NodeError(f"Function '{func_name}' not supported")
     def _name(self, node: ast.Name):
         try:
             return self.const_map[node.id]
         except KeyError:
-            raise ValueError(f"Constant '{node.id}' not supported")
+            raise NodeError(f"Constant '{node.id}' not supported")
     
     instance_map = {
         str: _string,

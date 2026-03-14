@@ -1,5 +1,8 @@
 
-class ForbiddenNode(Exception):
+class NodeError(Exception):
+    ...
+
+class ForbiddenNode(NodeError):
     ...
 
 if __name__ == "__main__":
