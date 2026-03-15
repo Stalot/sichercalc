@@ -15,6 +15,11 @@ class NodeInterpreter:
         except KeyError:
             raise NodeError(f"Operator {op.__class__.__name__} not supported")
 
+    def _unaryop(self, node: ast.UnaryOp):
+        if not isinstance(node.op, ast.USub):
+            raise ForbiddenNode(f"{type(node.op).__name__} operation is not supported")
+        return -(self.eval_node(node.operand))
+
     def _string(self, node: str):
         return self.eval_node(ast.parse(node))
 
@@ -51,6 +56,7 @@ class NodeInterpreter:
     instance_map = {
         str: _string,
         ast.BinOp: _binop,
+        ast.UnaryOp: _unaryop,
         ast.Constant: _constant,
         ast.Expr: _expr,
         ast.Module: _module,
