@@ -2,6 +2,7 @@ import ast
 from typing import Any, Callable
 from .op_logic import OpLogic
 from .exceptions import ForbiddenNode, NodeError
+from decimal import Decimal, InvalidOperation
 
 class NodeInterpreter:
     _opLogic: OpLogic = OpLogic()
@@ -13,7 +14,7 @@ class NodeInterpreter:
         try:
             return self._opLogic.call(type(op), left, right)
         except KeyError:
-            raise NodeError(f"Operator {op.__class__.__name__} not supported")
+            raise NodeError(f"{type(op).__name__} not supported")
 
     def _unaryop(self, node: ast.UnaryOp):
         if not isinstance(node.op, ast.USub):
@@ -24,7 +25,16 @@ class NodeInterpreter:
         return self.eval_node(ast.parse(node))
 
     def _constant(self, node: ast.Constant):
-        return node.value
+        value = node.value
+        prec: str = self._opLogic.precision_mode
+        if prec == "float":
+            value = float(value)
+        elif prec == "decimal":
+            try:
+                value = Decimal(str(value))
+            except InvalidOperation:
+                raise NodeError(f"Couldn't convert {type(value).__name__} to a Decimal object")
+        return value
 
     def _expr(self, node: ast.Expr):
         return self.eval_node(node.value)
