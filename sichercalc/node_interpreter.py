@@ -95,10 +95,10 @@ class NodeInterpreter:
                 except ValueError as ve:
                     raise ValueError(f"All constants must be python literals, such as str, int, float, ... But got {ve}")
         if functions:
-            for id, func in functions.items():
+            for func_id, func in functions.items():
                 if not isinstance(func, Callable):
                     raise ValueError(f"'{func}' is not callable")
-            self.func_map.update({id: func})
+                self.func_map[func_id] = func
     
     def eval_node(self, node: Any):
         _type: Any = type(node)
@@ -108,7 +108,7 @@ class NodeInterpreter:
 
 if __name__ == "__main__":
     inter: NodeInterpreter = NodeInterpreter()
-    new_logic = OpLogic(mode="decimal")
+    new_logic = OpLogic("decimal")
     inter._opLogic=new_logic
     result = inter.eval_node("1.0383747*5.92838388229930")
     print(f"{result=}")
