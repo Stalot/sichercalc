@@ -7,10 +7,25 @@ from decimal import Decimal, InvalidOperation
 class NodeInterpreter:
     _opLogic: OpLogic = OpLogic()
 
+    def _convert(self,
+                value: Any):
+        value: str = str(value)
+        prec: str = self._opLogic.precision_mode
+        if prec == "float":
+            value = float(value)
+        elif prec == "decimal":
+            try:
+                value = Decimal(str(value))
+            except InvalidOperation:
+                raise NodeError(f"Couldn't convert {type(value).__name__} to a Decimal object")
+        return value
+
     def _binop(self, node: ast.BinOp):
-        left = self.eval_node(node.left)
+        left: Any = self.eval_node(node.left)
+        left: float | Decimal = self._convert(left)
         op = node.op
-        right = self.eval_node(node.right)
+        right: Any = self.eval_node(node.right)
+        right: float | Decimal = self._convert(right)
         try:
             return self._opLogic.call(type(op), left, right)
         except KeyError:
@@ -26,15 +41,16 @@ class NodeInterpreter:
 
     def _constant(self, node: ast.Constant):
         value = node.value
-        prec: str = self._opLogic.precision_mode
-        if prec == "float":
-            value = float(value)
-        elif prec == "decimal":
-            try:
-                value = Decimal(str(value))
-            except InvalidOperation:
-                raise NodeError(f"Couldn't convert {type(value).__name__} to a Decimal object")
-        return value
+        #prec: str = self._opLogic.precision_mode
+        #if prec == "float":
+        #    value = float(value)
+        #elif prec == "decimal":
+        #    try:
+        #        value = Decimal(str(value))
+        #    except InvalidOperation:
+        #        raise NodeError(f"Couldn't convert {type(value).__name__} to a Decimal object")
+        #return value
+        return self._convert(value)
 
     def _expr(self, node: ast.Expr):
         return self.eval_node(node.value)
@@ -54,7 +70,8 @@ class NodeInterpreter:
    
         try:
             args = [self.eval_node(arg) for arg in node.args]
-            return self.func_map[func_name](*args)
+            result = self.func_map[func_name](*args)
+            return self._convert(result)
         except KeyError:
             raise NodeError(f"Function '{func_name}' not supported")
     def _name(self, node: ast.Name):
