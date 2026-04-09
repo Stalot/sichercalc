@@ -9,10 +9,8 @@ class AstEvaluator:
 
     def evaluate(self,
                  expression,
-                 precision_mode: str = "float",
                  context: None | dict[str, dict[str, Any | Callable]] = None) -> str:
         self._inter: NodeInterpreter = NodeInterpreter()
-        self._opLogic.set(precision_mode)
         self._inter.set_op_logic(self._opLogic)
         self._inter.context_map(context)
         return str(self._inter.eval_node(expression))

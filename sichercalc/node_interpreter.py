@@ -10,14 +10,10 @@ class NodeInterpreter:
     def _convert(self,
                 value: Any):
         value: str = str(value)
-        prec: str = self._opLogic.precision_mode
-        if prec == "float":
-            value = float(value)
-        elif prec == "decimal":
-            try:
-                value = Decimal(str(value))
-            except InvalidOperation:
-                raise NodeError(f"Couldn't convert {type(value).__name__} to a Decimal object")
+        try:
+            value = Decimal(value)
+        except InvalidOperation:
+            raise NodeError(f"Couldn't convert {type(value).__name__} to a Decimal object")
         return value
 
     def _binop(self, node: ast.BinOp):
@@ -41,15 +37,6 @@ class NodeInterpreter:
 
     def _constant(self, node: ast.Constant):
         value = node.value
-        #prec: str = self._opLogic.precision_mode
-        #if prec == "float":
-        #    value = float(value)
-        #elif prec == "decimal":
-        #    try:
-        #        value = Decimal(str(value))
-        #    except InvalidOperation:
-        #        raise NodeError(f"Couldn't convert {type(value).__name__} to a Decimal object")
-        #return value
         return self._convert(value)
 
     def _expr(self, node: ast.Expr):
