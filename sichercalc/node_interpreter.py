@@ -104,6 +104,10 @@ class NodeInterpreter:
                     raise ValueError(f"'{func}' is not callable")
                 self.func_map[func_id] = func
     
+    def clear_context_map(self) -> None:
+        self.func_map = {}
+        self.const_map = {}
+
     def eval_node(self, node: Any):
         _type: Any = type(node)
         if ast_instance := self.instance_map.get(_type):
