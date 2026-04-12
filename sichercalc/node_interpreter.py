@@ -1,47 +1,48 @@
 import ast
 from typing import Any, Callable
 from .op_logic import OpLogic
-from .exceptions import ForbiddenNode, NodeError, DivisionUndefinedError, DivisionIndeterminatedError, OperationOverFlowError
+from .exceptions import NodeEvaluationError, DivisionUndefinedError, DivisionIndeterminateError, OperationOverflowError, BinaryOperationError
 from decimal import Decimal, InvalidOperation, DivisionByZero, Overflow
 
 class NodeInterpreter:
-    _opLogic: OpLogic = OpLogic()
+    def __init__(self):
+        _opLogic: OpLogic = OpLogic()
 
-    def _convert(self,
-                value: Any):
-        value: str = str(value)
-        try:
-            value = Decimal(value)
-        except InvalidOperation:
-            raise NodeError(f"Couldn't convert {type(value).__name__} to a Decimal object")
-        return value
+    def _convert(self, value: Any) -> Decimal:
+       try:
+           return Decimal(value) if not isinstance(value, str) else Decimal(value.strip())
+       except (InvalidOperation, TypeError, ValueError):
+           raise NodeEvaluationError(f"Cannot treat {type(value).__name__} ({value}) as a numeric value")
+ 
 
     def _binop(self, node: ast.BinOp):
         left: Any = self.eval_node(node.left)
-        left: float | Decimal = self._convert(left)
+        left:  Decimal = self._convert(left)
         op = node.op
         right: Any = self.eval_node(node.right)
-        right: float | Decimal = self._convert(right)
+        right: Decimal = self._convert(right)
         try:
             return self._opLogic.call(type(op), left, right)
-        except KeyError:
-            raise NodeError(f"{type(op).__name__} not supported")
         except Overflow:
-            raise OperationOverFlowError(f"Result of the arithmetic operation is too large to be represented")
+            raise OperationOverflowError(f"Result of the arithmetic operation is too large to be represented")
         except (InvalidOperation, DivisionByZero) as err:
-            if isinstance(op, ast.Div):
+            if isinstance(op, ast.Div) and right == Decimal('0'):
                 # raises exception if zero is divided by
                 # zero
-                if left == Decimal('0') and right == Decimal('0'):
-                    raise DivisionIndeterminatedError("0 divided by 0 is indeterminated")                                               # raises exception if any non-zero number
+                if left == Decimal('0'):
+                    raise DivisionIndeterminateError("0 divided by 0 is indeterminated", left, op, right)
+                # raises exception if any non-zero number
                 # is divided by zero
-                elif left != Decimal('0') and right == Decimal('0'):
-                    raise DivisionUndefinedError(f"{str(left)} divided by 0 is undefined")
-            raise BinaryOperationError(err)
+                elif left != Decimal('0'):
+                    raise DivisionUndefinedError(f"{str(left)} divided by 0 is undefined", left, op, right)
+            raise BinaryOperationError(str(err),
+                                       left,
+                                       op,
+                                       right)
 
     def _unaryop(self, node: ast.UnaryOp):
         if not isinstance(node.op, ast.USub):
-            raise ForbiddenNode(f"{type(node.op).__name__} operation is not supported")
+            raise NodeEvaluationError(f"{type(node.op).__name__} operation is not supported")
         return -(self.eval_node(node.operand))
 
     def _string(self, node: str):
@@ -65,19 +66,19 @@ class NodeInterpreter:
         try:
             func_name = node.func.id
         except AttributeError:
-            raise NodeError(f"Can't call {type(node.func.value).__name__} object ({node.func.value}) as a function")
+            raise NodeEvaluationError(f"Can't call {type(node.func.value).__name__} object ({node.func.value}) as a function")
    
         try:
             args = [self.eval_node(arg) for arg in node.args]
             result = self.func_map[func_name](*args)
             return self._convert(result)
         except KeyError:
-            raise NodeError(f"Function '{func_name}' not supported")
+            raise NodeEvaluationError(f"Function '{func_name}' not supported")
     def _name(self, node: ast.Name):
         try:
             return self.const_map[node.id]
         except KeyError:
-            raise NodeError(f"Constant '{node.id}' not supported")
+            raise NodeEvaluationError(f"Constant '{node.id}' not supported")
     
     instance_map = {
         str: _string,
@@ -124,7 +125,7 @@ class NodeInterpreter:
         _type: Any = type(node)
         if ast_instance := self.instance_map.get(_type):
             return ast_instance(self, node)
-        raise ForbiddenNode(f"{_type} is not supported")
+        raise NodeEvaluationError(f"{_type} is not supported")
 
 if __name__ == "__main__":
     inter: NodeInterpreter = NodeInterpreter()
