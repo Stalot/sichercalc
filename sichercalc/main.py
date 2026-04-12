@@ -4,8 +4,9 @@ from .node_interpreter import NodeInterpreter
 import ast
 
 class AstEvaluator:
-    _inter: NodeInterpreter = NodeInterpreter()
-    _opLogic: OpLogic = OpLogic()
+    def __init__(self):
+        self._inter: NodeInterpreter = NodeInterpreter()
+        self._opLogic: OpLogic = OpLogic()
 
     def evaluate(self,
                  expression,

@@ -5,7 +5,8 @@ from .exceptions import ForbiddenNode, NodeError
 from decimal import Decimal, InvalidOperation
 
 class NodeInterpreter:
-    _opLogic: OpLogic = OpLogic()
+    def __init__(self) -> None:
+        self._opLogic: OpLogic = OpLogic()
 
     def _convert(self,
                 value: Any):
