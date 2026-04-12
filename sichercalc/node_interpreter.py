@@ -1,8 +1,8 @@
 import ast
 from typing import Any, Callable
 from .op_logic import OpLogic
-from .exceptions import ForbiddenNode, NodeError
-from decimal import Decimal, InvalidOperation
+from .exceptions import ForbiddenNode, NodeError, DivisionUndefinedError, DivisionIndeterminatedError, OperationOverFlowError
+from decimal import Decimal, InvalidOperation, DivisionByZero, Overflow
 
 class NodeInterpreter:
     _opLogic: OpLogic = OpLogic()
@@ -26,6 +26,18 @@ class NodeInterpreter:
             return self._opLogic.call(type(op), left, right)
         except KeyError:
             raise NodeError(f"{type(op).__name__} not supported")
+        except Overflow:
+            raise OperationOverFlowError(f"Result of the arithmetic operation is too large to be represented")
+        except (InvalidOperation, DivisionByZero) as err:
+            if isinstance(op, ast.Div):
+                # raises exception if zero is divided by
+                # zero
+                if left == Decimal('0') and right == Decimal('0'):
+                    raise DivisionIndeterminatedError("0 divided by 0 is indeterminated")                                               # raises exception if any non-zero number
+                # is divided by zero
+                elif left != Decimal('0') and right == Decimal('0'):
+                    raise DivisionUndefinedError(f"{str(left)} divided by 0 is undefined")
+            raise BinaryOperationError(err)
 
     def _unaryop(self, node: ast.UnaryOp):
         if not isinstance(node.op, ast.USub):
