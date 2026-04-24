@@ -1,8 +1,8 @@
 import ast
 from typing import Any, Callable
 from .op_logic import OpLogic
-from .exceptions import NodeEvaluationError, DivisionUndefinedError, DivisionIndeterminateError, OperationOverflowError, BinaryOperationError
-from decimal import Decimal, InvalidOperation, DivisionByZero, Overflow
+from .exceptions import NodeEvaluationError, OperationOverflowError, BinaryOperationError, InvalidArithmeticError
+from decimal import Decimal, InvalidOperation, Overflow, DecimalException
 
 class NodeInterpreter:
     def __init__(self):
@@ -17,25 +17,14 @@ class NodeInterpreter:
 
     def _binop(self, node: ast.BinOp):
         left: Any = self.eval_node(node.left)
-        left:  Decimal = self._convert(left)
+        left: Decimal = self._convert(left)
         op = node.op
         right: Any = self.eval_node(node.right)
         right: Decimal = self._convert(right)
         try:
             return self._opLogic.call(type(op), left, right)
-        except Overflow:
-            raise OperationOverflowError(f"Result of the arithmetic operation is too large to be represented")
-        except (InvalidOperation, DivisionByZero) as err:
-            if isinstance(op, ast.Div) and right == Decimal('0'):
-                # raises exception if zero is divided by
-                # zero
-                if left == Decimal('0'):
-                    raise DivisionIndeterminateError("0 divided by 0 is indeterminated", left, op, right)
-                # raises exception if any non-zero number
-                # is divided by zero
-                elif left != Decimal('0'):
-                    raise DivisionUndefinedError(f"{str(left)} divided by 0 is undefined", left, op, right)
-            raise BinaryOperationError(str(err),
+        except (DecimalException, NodeEvaluationError) as nee:
+            raise BinaryOperationError(str(nee),
                                        left,
                                        op,
                                        right)
@@ -122,10 +111,18 @@ class NodeInterpreter:
         self.const_map = {}
 
     def eval_node(self, node: Any):
-        _type: Any = type(node)
-        if ast_instance := self.instance_map.get(_type):
-            return ast_instance(self, node)
-        raise NodeEvaluationError(f"{_type} is not supported")
+        try:
+            _type: Any = type(node)
+            if ast_instance := self.instance_map.get(_type):
+                return ast_instance(self, node)
+            raise NodeEvaluationError(f"{_type} is not supported")
+        except Overflow:
+            raise OperationOverflowError(f"Result of the arithmetic operation is too large to be represented")
+        except BinaryOperationError as boe:
+            raise InvalidArithmeticError(f"{boe.binop_string} — {str(boe)}",
+                                         boe.left,
+                                         boe.op,
+                                         boe.right)
 
 if __name__ == "__main__":
     inter: NodeInterpreter = NodeInterpreter()

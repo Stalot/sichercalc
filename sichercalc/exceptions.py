@@ -7,28 +7,25 @@ class NodeEvaluationError(Exception):
 
 class BinaryOperationError(NodeEvaluationError):
     def __init__(self,
-                 msg: str,
-                 left:  Any = None,
-                 op: None | ast.AST = None,
-                 right:  Any = None):
-        self.left = left
-        self.op = op
-        self.right = right
-        super().__init__(msg)
+                 msg: None | str,
+                 left: Any,
+                 op: ast.AST,
+                 right: Any):
+        self.msg: str = msg
+        self.left: Any = left
+        self.op: ast.AST = op
+        self.right: Any = right
+        if all((self.left, self.op, self.right)):
+            raise ValueError("left, operator and right node cannot be None type")
+        node_map = {                                                    ast.Add: "+",                                               ast.Sub: "-",                                               ast.Div: "/",                                               ast.Mult: "*",                                              ast.Pow: "**",                                          }
+        op_type = type(self.op)
+        pretty_op: str = node_map[op_type]
+        self.binop_string: str = f"{self.left} {pretty_op} {self.right}"
+        if not msg:
+            self.msg = self.binop_string
+        super().__init__(self.msg)
 
-class DivisionByZeroError(BinaryOperationError, decimal.DivisionByZero):
-        pass
-
-class DivisionUndefinedError(DivisionByZeroError):
-    """
-    x / 0 (x != 0)
-    """
-    pass
-
-class DivisionIndeterminateError(DivisionByZeroError, decimal.InvalidOperation):
-    """
-    0 / 0
-    """
+class InvalidArithmeticError(BinaryOperationError, decimal.InvalidOperation, decimal.DivisionByZero):
     pass
 
 class OperationOverflowError(BinaryOperationError, decimal.Overflow):
@@ -36,8 +33,7 @@ class OperationOverflowError(BinaryOperationError, decimal.Overflow):
 
 if __name__ == "__main__":
     try:
-        raise BinaryOperationError("cannot divide 8 by 0", 8, ast.Div, 0)
-    except BinaryOperationError as binerr:
-        print(f"{binerr.left=}")
-        print(f"{binerr.op=}")
-        print(f"{binerr.right=}")
+        raise BinaryOperationError("Cannot divide by zero", 8, ast.Div, 0)
+    except BinaryOperationError as boe:
+        print(f"{boe.msg=}")
+        print(f"{boe.binop_string=}")
