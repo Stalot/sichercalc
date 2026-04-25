@@ -2,6 +2,7 @@ from sichercalc import AstEvaluator
 
 evaluator = AstEvaluator()
 
+# Custom function
 def circle_area(r, pi: None | float = None):
     if not pi:
         pi = 3.14
@@ -21,9 +22,8 @@ def main():
     }
 
     result: str = evaluator.evaluate(expr,
-                                     "decimal",
                                      context)
-    print(f"result = {result}") # 122.71484375
+    print(f"{result=}") # 122.71484375
 
 if __name__ == "__main__":
     main()
