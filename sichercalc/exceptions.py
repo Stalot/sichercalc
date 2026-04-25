@@ -15,18 +15,16 @@ class BinaryOperationError(NodeEvaluationError):
         self.left: Any = left
         self.op: ast.AST = op
         self.right: Any = right
-        if all((self.left, self.op, self.right)):
-            raise ValueError("left, operator and right node cannot be None type")
         node_map = {                                                    ast.Add: "+",                                               ast.Sub: "-",                                               ast.Div: "/",                                               ast.Mult: "*",                                              ast.Pow: "**",                                          }
         op_type = type(self.op)
-        pretty_op: str = node_map[op_type]
+        pretty_op: str = node_map.get(op_type, "?")
         self.binop_string: str = f"{self.left} {pretty_op} {self.right}"
         if not msg:
             self.msg = self.binop_string
         super().__init__(self.msg)
 
-class InvalidArithmeticError(BinaryOperationError, decimal.InvalidOperation, decimal.DivisionByZero):
-    pass
+#class InvalidArithmeticError(BinaryOperationError, decimal.InvalidOperation, decimal.DivisionByZero):
+#    pass
 
 class OperationOverflowError(BinaryOperationError, decimal.Overflow):
     pass

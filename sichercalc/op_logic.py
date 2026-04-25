@@ -1,23 +1,25 @@
 import ast
-from typing import Any, Callable
+from typing import Any
 from .exceptions import NodeEvaluationError
-from .finals import DEFAULT_OP_MAP
+import operator
 
-# Operators logic
-class OpLogic():
-    def __init__(self) -> None:
-        self.op_map = DEFAULT_OP_MAP
-
-    def call(self,
-             node_op,
-             left,
-             right):
-        try:
-            l: Any = left
-            r: Any = right
-            return self.op_map[node_op](l, r)
-        except KeyError:
-            raise NodeEvaluationError(f"{repr(node_op)} operator not supported.")
+# Operator logic
+def op_call(node_op,
+            left,
+            right):
+    op_map = {
+        ast.Add: operator.add,
+        ast.Sub: operator.sub,
+        ast.Mult: operator.mul,
+        ast.Div: operator.truediv,
+        ast.Pow: operator.pow
+    }
+    try:
+        l: Any = left
+        r: Any = right
+        return op_map[node_op](l, r)
+    except KeyError:
+        raise NodeEvaluationError(f"{repr(node_op)} operator not supported.")
 
 if __name__ == "__main__":
     ...
