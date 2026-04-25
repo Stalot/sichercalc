@@ -1,29 +1,21 @@
-from typing import Any, Callable
-from .op_logic import OpLogic
+from typing import Any
 from .node_interpreter import NodeInterpreter
 import ast
 
 class AstEvaluator:
-    _inter: NodeInterpreter = NodeInterpreter()
-    _opLogic: OpLogic = OpLogic()
+    def __init__(self):
+        self._inter: NodeInterpreter = NodeInterpreter()
 
     def evaluate(self,
                  expression,
-                 precision_mode: str = "float",
-                 context: None | dict[str, dict[str, Any | Callable]] = None) -> str:
-        self._inter: NodeInterpreter = NodeInterpreter()
-        self._opLogic.set(precision_mode)
-        self._inter.set_op_logic(self._opLogic)
-        self._inter.context_map(context)
-        return str(self._inter.eval_node(expression))
+                 context: None | dict[str, dict[str, Any]] = None) -> str:
+        # Clears the previous context
+        self._inter.clear_context_map()
 
-    def set_operators(self, 
-                      ops: dict[ast.AST, Callable],
-                      update: bool = True) -> None:
-        if not update:
-            self._opLogic.set(op_map=ops)
-            return
-        self._opLogic.op_map.update(ops)
+        if context:
+            # Local context:
+            self._inter.context_map(context)
+        return str(self._inter.eval_node(expression))
 
 if __name__ == "__main__":
     ...

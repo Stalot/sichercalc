@@ -1,39 +1,50 @@
 import ast
 from typing import Any, Callable
-from .op_logic import OpLogic
-from .exceptions import ForbiddenNode, NodeError
-from decimal import Decimal, InvalidOperation
+from .op_logic import op_call
+from .exceptions import NodeEvaluationError, OperationOverflowError, BinaryOperationError
+from decimal import Decimal, InvalidOperation, Overflow, DecimalException
 
 class NodeInterpreter:
-    _opLogic: OpLogic = OpLogic()
+    def __init__(self) -> None:
+        self.instance_map = {
+            str: self._string,
+            ast.BinOp: self._binop,
+            ast.UnaryOp: self._unaryop,
+            ast.Constant: self._constant,
+            ast.Expr: self._expr,
+            ast.Module: self._module,
+            ast.Call: self._call,
+            ast.Name: self._name,
+        }
 
-    def _convert(self,
-                value: Any):
-        value: str = str(value)
-        prec: str = self._opLogic.precision_mode
-        if prec == "float":
-            value = float(value)
-        elif prec == "decimal":
-            try:
-                value = Decimal(str(value))
-            except InvalidOperation:
-                raise NodeError(f"Couldn't convert {type(value).__name__} to a Decimal object")
-        return value
+        self.func_map: dict[str, Callable] = {}
+        self.const_map: dict[str, Any] = {}
+
+    def _convert(self, value: Any) -> Decimal:
+       try:
+           return Decimal(value) if not isinstance(value, str) else Decimal(value.strip())
+       except (InvalidOperation, TypeError, ValueError):
+           raise NodeEvaluationError(f"Cannot treat {type(value).__name__} ({value}) as a numeric value") 
 
     def _binop(self, node: ast.BinOp):
         left: Any = self.eval_node(node.left)
-        left: float | Decimal = self._convert(left)
+        left: Decimal = self._convert(left)
         op = node.op
         right: Any = self.eval_node(node.right)
-        right: float | Decimal = self._convert(right)
+        right: Decimal = self._convert(right)
         try:
-            return self._opLogic.call(type(op), left, right)
-        except KeyError:
-            raise NodeError(f"{type(op).__name__} not supported")
+            return op_call(type(op), left, right)
+        except (OverflowError, Overflow):
+            raise OperationOverflowError(f"Result of the arithmetic operation is too large to be represented",
+                                         left,
+                                         op,
+                                         right)
+        except (DecimalException, NodeEvaluationError) as nee:
+            raise BinaryOperationError(str(nee),                                                   left,                                                       op,                                                         right)
 
     def _unaryop(self, node: ast.UnaryOp):
         if not isinstance(node.op, ast.USub):
-            raise ForbiddenNode(f"{type(node.op).__name__} operation is not supported")
+            raise NodeEvaluationError(f"{type(node.op).__name__} operation is not supported")
         return -(self.eval_node(node.operand))
 
     def _string(self, node: str):
@@ -41,15 +52,6 @@ class NodeInterpreter:
 
     def _constant(self, node: ast.Constant):
         value = node.value
-        #prec: str = self._opLogic.precision_mode
-        #if prec == "float":
-        #    value = float(value)
-        #elif prec == "decimal":
-        #    try:
-        #        value = Decimal(str(value))
-        #    except InvalidOperation:
-        #        raise NodeError(f"Couldn't convert {type(value).__name__} to a Decimal object")
-        #return value
         return self._convert(value)
 
     def _expr(self, node: ast.Expr):
@@ -66,38 +68,19 @@ class NodeInterpreter:
         try:
             func_name = node.func.id
         except AttributeError:
-            raise NodeError(f"Can't call {type(node.func.value).__name__} object ({node.func.value}) as a function")
+            raise NodeEvaluationError(f"Can't call {type(node.func.value).__name__} object ({node.func.value}) as a function")
    
         try:
             args = [self.eval_node(arg) for arg in node.args]
             result = self.func_map[func_name](*args)
             return self._convert(result)
         except KeyError:
-            raise NodeError(f"Function '{func_name}' not supported")
+            raise NodeEvaluationError(f"Function '{func_name}' not supported")
     def _name(self, node: ast.Name):
         try:
             return self.const_map[node.id]
         except KeyError:
-            raise NodeError(f"Constant '{node.id}' not supported")
-    
-    instance_map = {
-        str: _string,
-        ast.BinOp: _binop,
-        ast.UnaryOp: _unaryop,
-        ast.Constant: _constant,
-        ast.Expr: _expr,
-        ast.Module: _module,
-        ast.Call: _call,
-        ast.Name: _name,
-    }
-    
-    func_map: dict[str, Callable] = {}
-    const_map: dict[str, int | float] = {}
-    
-    def set_op_logic(self, logic: OpLogic):
-    	if not isinstance(logic, OpLogic):
-    		raise TypeError(f"logic must be an OpLogic object, not {type(logic).__name__}!")
-    	self._opLogic = logic
+            raise NodeEvaluationError(f"Constant '{node.id}' not supported")
 
     def context_map(self, context) -> None:
         if not context:
@@ -117,12 +100,21 @@ class NodeInterpreter:
                     raise ValueError(f"'{func}' is not callable")
                 self.func_map[func_id] = func
     
+    def clear_context_map(self) -> None:
+        self.func_map = {}
+        self.const_map = {}
+
     def eval_node(self, node: Any):
         _type: Any = type(node)
         if ast_instance := self.instance_map.get(_type):
-            return ast_instance(self, node)
-        raise ForbiddenNode(f"{_type} is not supported")
-
+            return ast_instance(node)
+        raise NodeEvaluationError(f"{_type} is not supported")
+        #except BinaryOperationError as boe:
+        #    print(f"{boe.left=}")
+        #    raise InvalidArithmeticError(f"{boe.binop_string} — {str(boe)}",
+        #                                 boe.left,
+        #                                 boe.op,
+        #                                 boe.right)
 if __name__ == "__main__":
     inter: NodeInterpreter = NodeInterpreter()
     new_logic = OpLogic("decimal")
