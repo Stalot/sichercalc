@@ -25,7 +25,7 @@ class AstEvaluator:
             if not isinstance(quantize, str):
                 raise TypeError(f"quantize must be a string, not {type(quantize)!r}")
             evaluated_result = evaluated_result.quantize(Decimal(quantize),
-                                      rounding=rounding)
+                                                         rounding=rounding)
         # Normalizes the result after evaluation, it doesn't apply to internal calculation.
         if normalize:
             if not isinstance(normalize, bool):
@@ -41,9 +41,13 @@ class AstEvaluator:
         """
         number: str = str(x)
         decimal_places: int = int(places)
-        if period := number.index("."):
-            trunc = number[period:period+1+decimal_places]
-            number = number[:period] + trunc
+        period: int = number.find(".") # returns -1 if not found
+        if period != -1:
+            trunc: str = number[period:period+1+decimal_places]
+            number: str = number[:period] + trunc
+            # removes trailing zeros
+            if trunc.endswith("0"):
+                number = str(Decimal(number).normalize())
         return number
 
 
