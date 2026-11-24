@@ -72,7 +72,7 @@ class SafeEvaluator:
                 if func_id not in self.func_map:
                     raise ValueError(f"Function '{func_id}' not allowed.")
                 try:
-                    return self.func_map[func_id](args, kwargs)
+                    return self.func_map[func_id](*args, **kwargs)
                 except (ValueError, TypeError, InvalidOperation, ZeroDivisionError) as e:
                     raise ValueError(f"An exception occurried during the execution of {func_id}(): '{e}'")
             # Map of allowed node types
