@@ -1,13 +1,28 @@
 import ast
 import operator
 from decimal import Decimal, localcontext, InvalidOperation
+from typing import Callable
 
 class SafeEvaluator:
     def __init__(self):
-        self.func_map = {}
-    def evaluate_expression(self, string: str) -> Decimal:              return self._eval_expression(string)
+        self.func_map: dict[str, Callable] = {}
+    def set_function_whitelist(self, callables):
+        self.func_map.clear()
+        if isinstance(callables, (list, tuple, set)):
+            for c in callables:
+                self.func_map[str(c.__name__)] = c
+        elif isinstance(callables, dict):
+            self.func_map = callables
+        else:
+            raise TypeError(f"callables must be a list, tuple, set or dictionary, but got {type(callables).__name__}")
 
-    def _parse_string(self, string: str):
+    def evaluate_expression(self, string: str) -> Decimal:
+        if not isinstance(string, str):
+            raise TypeError(f"string must be of type str, not {type(string).__name__}")
+        return self._parse_string(string)
+
+    # Parses the given string into a node tree, evaluates it node by node and then returns a Decimal object.
+    def _parse_string(self, string: str) -> Decimal:
         node_tree = ast.parse(string)
         # The main ast node tree.
         # For example, if string is "2+2", node_tree will
@@ -22,8 +37,7 @@ class SafeEvaluator:
         # | > )
         # | )
 
-        # Recursively evaluates the input node and returns
-        # a Decimal object
+        # inspect_node takes an ast node and, if in node_map, calls a dedicaded child method to evaluate that node — returns a Decimal value.
         def inspect_node(node) -> Decimal:
             def expr_node(): # ast.Expr
                 return inspect_node(node.value)
@@ -61,21 +75,21 @@ class SafeEvaluator:
             def module_node(): # ast.Module
                 return inspect_node(node.body)
             def call_node(): # ast.Call
-                print(node)
                 func_id = node.func.id
                 args = [inspect_node(arg) for arg in node.args]
                 kwargs = {kw.arg: inspect_node(kw.value) for kw in node.keywords}
-                print(f"{kwargs=}")
-                print(f"{args=}")
-                print(f"{func_id=}")
 
                 if func_id not in self.func_map:
                     raise ValueError(f"Function '{func_id}' not allowed.")
                 try:
-                    return self.func_map[func_id](*args, **kwargs)
+                    result: Decimal = self.func_map[func_id](*args, **kwargs)
+                    if not isinstance(result, Decimal):
+                        result = Decimal(str(result))
+                    return result
                 except (ValueError, TypeError, InvalidOperation, ZeroDivisionError) as e:
-                    raise ValueError(f"An exception occurried during the execution of {func_id}(): '{e}'")
-            # Map of allowed node types
+                    raise ValueError(f"An exception occurried during the execution of {func_id}: '{e}'")
+
+            # Allowed nodes
             node_map = {
                 ast.Expr: expr_node,
                 ast.BinOp: binop_node,
@@ -90,21 +104,10 @@ class SafeEvaluator:
                 if type(node) == list:
                     node = node[0]
                 return node_map[type(node)]()
-            # Raises an exception if node type not in node_map
+            # Raises an exception if not in node_map
             except KeyError:
                 raise ValueError(f"{type(node).__name__} object not allowed.")
         return inspect_node(node_tree)
 
-    def _eval_expression(self, expression: str) -> Decimal:
-        expression = expression.replace("^", "**").replace("%", "/ 100").replace("×", "*").replace("÷", "/")
-        result = self._parse_string(expression)
-        return result
-
-def _main() -> None:
-    se = SafeEvaluator()
-    result = se.evaluate_expression("5*5")
-    print(result)
-    print(type(result))
-
 if __name__ == "__main__":
-    _main()
+    ...
