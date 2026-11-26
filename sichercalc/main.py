@@ -6,6 +6,7 @@ from typing import Callable
 class SafeEvaluator:
     def __init__(self):
         self.func_map: dict[str, Callable] = {}
+
     def set_function_whitelist(self, callables):
         self.func_map.clear()
         if isinstance(callables, (list, tuple, set)):
@@ -73,6 +74,8 @@ class SafeEvaluator:
                 else:
                     raise ValueError(f"{type(op).__name__} operation not supported")
             def module_node(): # ast.Module
+                if not node.body:
+                    raise ValueError("Input string is empty")
                 return inspect_node(node.body)
             def call_node(): # ast.Call
                 func_id = node.func.id
