@@ -1,8 +1,8 @@
 # CHANGELOG
 
-## 0.0.0.dev3
+## 0.1.0.dev0
 
-- function support.
+- function support and rewrite from scratch.
 
 ## 0.0.0.dev1
 
