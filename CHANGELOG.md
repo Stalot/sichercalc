@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 0.0.0.dev3
+
+- function support.
+
 ## 0.0.0.dev1
 
 - New publishing try due to workflow error in 0.0.0.dev0.
